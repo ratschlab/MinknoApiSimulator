@@ -1,0 +1,3 @@
+[submodule "external/minknow_api"]
+	path = external/minknow_api
+	url = https://github.com/nanoporetech/minknow_api.git
