@@ -1,4 +1,5 @@
 import asyncio
+import ssl
 from grpclib.server import Server
 
 from lib.minknow_api import manager, instance
@@ -26,10 +27,25 @@ class ManagerService(manager.ManagerServiceBase):
 
 # Start the gRPC server
 async def serve():
+    # print(ssl.OPENSSL_VERSION)
+    # ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+    # ssl_context.load_cert_chain("certs/server.pem", "certs/server.key")  # Server's certificate
+    # ssl_context.load_verify_locations("./certs/rootCA.crt")  # Trust only our CA
+    # ssl_context.verify_mode = ssl.CERT_REQUIRED  # Require client certificate
+
+    ctx = ssl.create_default_context(
+        ssl.Purpose.CLIENT_AUTH,
+        cafile="certs/client.pem",
+    )
+    ctx.verify_mode = ssl.CERT_REQUIRED
+    ctx.load_cert_chain("certs/server.pem", "certs/server.key")
+    # ctx.set_ciphers('ECDHE+AESGCM:ECDHE+CHACHA20:DHE+AESGCM:DHE+CHACHA20')
+    ctx.set_alpn_protocols(['h2'])
+
     server = Server([ManagerService()])
 
-    await server.start("localhost", 50051)
-    print("Listening on http://localhost:50051/")
+    await server.start("localhost", 50051, ssl=ctx)
+    print("🔒 mTLS MinKNOW API Server started on port 50051...")
     await server.wait_closed()
 
 
