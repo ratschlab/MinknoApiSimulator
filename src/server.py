@@ -1,7 +1,6 @@
 import grpc
 from concurrent import futures
 from credentials import *
-from lib.minknow_api.analysis_configuration import AnalysisConfiguration
 from manager_service import *
 from instance_service import *
 from acquisition_service import *
