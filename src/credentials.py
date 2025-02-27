@@ -15,17 +15,14 @@
 
 import os
 
+CERT_DIR = "/home/sayan/PyCharmProjects/MinknoApiSimulator/certs/"
+CLIENT_CERT_FILE = CERT_DIR + "client.pem"
+CLIENT_KEY_FILE = CERT_DIR + "client.key"
+SERVER_CERT_FILE = CERT_DIR + "server.pem"
+SERVER_KEY_FILE = CERT_DIR + "server.key"
 
-def _load_credential_from_file(filepath, binary=True):
-    real_path = os.path.join(os.path.dirname(__file__), filepath)
+def load_credential_from_file(filepath, binary=True):
+    # real_path = os.path.join(os.path.dirname(__file__), filepath)
     mode = 'rb' if binary else 'r'
-    with open(real_path, mode) as f:
+    with open(filepath, mode) as f:
         return f.read()
-
-CERTS_DIR = "/home/sayan/Downloads/readuntil_fake/python_readuntil_client/generate_certs/generated"
-
-
-SERVER_CERTIFICATE = _load_credential_from_file(CERTS_DIR + "server.crt")
-SERVER_CERTIFICATE_KEY = _load_credential_from_file(CERTS_DIR + "server.key")
-ROOT_CERTIFICATE = _load_credential_from_file(CERTS_DIR + "ca.crt")
-DEV_API_TOKEN = _load_credential_from_file("/home/sayan/Documents/minknow-api-token.txt", binary=False)
