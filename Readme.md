@@ -15,10 +15,6 @@ python src/server.py &
 python src/client.py
 ```
 
-I get the following exception when I run this -
-```text
-Exception iterating responses: argument of type 'type' is not iterable
-```
 
 ## TODO
 - [ ] Remove version hardcoding from manager and instance services (currently hardcoded to "6.0.0")

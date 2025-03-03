@@ -37,7 +37,7 @@ class ReadDataThreads:
         self.reads = [None for _ in range(n_channels)]
         self.offsets = [0 for _ in range(n_channels)]
         self.stop_receiving = set()
-        self.eject = set
+        self.eject = set()
 
     def _update(self):
         for i in range(self.n_channels):
