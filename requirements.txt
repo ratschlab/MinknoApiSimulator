@@ -1,0 +1,3 @@
+protobuf==4.25.6
+minknow-api==6.0.4
+read5==1.2.5
