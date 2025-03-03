@@ -8,7 +8,7 @@ class DeviceService(device_pb2_grpc.DeviceServiceServicer):
             has_flow_cell = True,
             channel_count = 512,
             wells_per_channel = 1,
-            flow_cell_id = "f10wc311-16",
+            flow_cell_id = "f10wc31116",
             asic_id_str = "a51c16-5+r",
             has_adapter = False
         )
@@ -23,3 +23,7 @@ class DeviceService(device_pb2_grpc.DeviceServiceServicer):
         response.pa_ranges.extend([936.0 for _ in range(512)])
 
         return response
+
+    def get_sample_rate(self, request, context):
+        info("device: get_sample_rate")
+        return device_pb2.GetSampleRateResponse(sample_rate=4000)

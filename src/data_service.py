@@ -1,9 +1,130 @@
 from prelude import *
+from enum import Enum
 from minknow_api import data_pb2, data_pb2_grpc
+# from reader import server
+from multiprocessing import Process
+# import zmq
+from dataclasses import dataclass
+import time
+from read5 import read
+
+
+blow5_file = "/scratch/Zymo/signal/blow5/s180/0/Sigs-0.blow5"
+fast5_file = "/scratch/Zymo/signal/fast5/s180/0/Sigs-0.fast5"
+pod5_file = "/data/PBA70346_skip_5c03b04e_00bcc91b_0.pod5"
+CHUNK_SIZE = 1600
+
+@dataclass
+class Read:
+    def __init__(self, rid, signal):
+        self.rid = rid
+        self.signal = signal
+
+def package_read(read: Read, start: int):
+    length = min(CHUNK_SIZE, len(read.signal) - start)
+    return data_pb2.GetLiveReadsResponse.ReadData(
+        id=read.rid,
+        chunk_classifications=[83], # strand
+        chunk_length=length,
+        raw_data=read.signal[start:start + length],
+    )
+
+
+class ReadDataThreads:
+    def __init__(self, filename, n_channels):
+        self.r5 = read(filename)
+        self.n_channels = n_channels
+        self.reads = [None for _ in range(n_channels)]
+        self.offsets = [0 for _ in range(n_channels)]
+        self.stop_receiving = set()
+        self.eject = set
+
+    def _update(self):
+        for i in range(self.n_channels):
+            if self.reads[i] is not None:
+                advance = min(CHUNK_SIZE, len(self.reads[i].signal) - self.offsets[i])
+                self.offsets[i] += advance
+            if self.reads[i] is None or len(self.reads[i].signal) == self.offsets[i]:
+                rid = next(self.r5)
+                if rid is not None:
+                    self.reads[i] = Read(rid, self.r5.getSignal(rid))
+                    self.offsets[i] = 0
+                else:
+                    self.reads[i] = None
+                    self.offsets[i] = 0
+
+    def _eject(self, i):
+        self.reads[i] = None
+
+    def get_data(self):
+        data = {}
+        self._update()
+        for i in range(self.n_channels):
+            if i in self.stop_receiving:
+                continue # don't add the read to the result
+            elif i in self.eject:
+                self._eject(i)
+            elif self.reads[i] is not None:
+                data[i] = package_read(self.reads[i], self.offsets[i])
+        return data
 
 class DataService(data_pb2_grpc.DataServiceServicer):
     def __init__(self):
-        self.setup_config = None
+        self.setup = False
+        self.frst_channel = 0
+        self.last_channel = 0
+        self.raw_data_type = data_pb2.GetLiveReadsRequest.RawDataType.KEEP_LAST
+        # self.reader_process = Process(target=server)
+        # self.reader_process.start()
+        # self.context = zmq.Context()
+        # self.server_socket = self.context.socket(zmq.REQ)
+        # self.server_socket.connect("ipc:///tmp/mksim")
+        self.read_data_threads = ReadDataThreads(blow5_file, 512)
+        self.last_sampled = time.time()
+
+    def _setup(self, config):
+        info("data: get_live_reads.setup")
+        print(f"Received StreamSetup: first_channel={config.first_channel}, "
+              f"last_channel={config.last_channel}, "
+              f"raw_data_type={config.raw_data_type}")
+        self.setup = True
+        self.first_channel = config.first_channel
+        self.last_channel = config.last_channel
+        self.raw_data_type = config.raw_data_type
+        # self.sample_minimum_chunk_size = config.sample_minimum_chunk_size
+        # if config.max_unblock_read_length.HasField("max_unblock_read_length_samples"):
+        #     info("unblock_read_length in samples: max_unblock_read_length_samples")
+        # elif config.max_unblock_read_length.HasField("max_unblock_read_length_seconds"):
+        #     info("unblock_read_length in seconds: max_unblock_read_length_seconds")
+        # self.accepted_first_chunk_classifications = config.accepted_first_chunk_classifications
+
+    def _perform_actions(self, actions):
+        return [self._perform_action(action) for action in actions]
+
+    def _perform_action(self, action):
+        info(f"Received Action: action_id={action.action_id}, "
+              f"channel={action.channel}, read_id={action.id}")
+
+        # Simulate processing the action -- todo
+
+        action_response = data_pb2.GetLiveReadsResponse.ActionResponse(
+            action_id=action.action_id,
+            response=data_pb2.GetLiveReadsResponse.ActionResponse.Response.SUCCESS
+        )
+        yield data_pb2.GetLiveReadsResponse(
+            action_responses=[action_response]
+        )
+
+    def _get_data(self):
+        # self.server_socket.send_string("")
+        # data = self.server_socket.recv_pyobj()
+        data = self.read_data_threads.get_data()
+        # current_time = time.time()
+        # elapsed_time = current_time - self.last_sampled
+        # if elapsed_time < 0.4:
+        #     time.sleep(0.4 - elapsed_time)
+        self.last_sampled = time.time()
+        return data
 
     def get_data_types(self, request, context):
         info("data: get_data_types")
@@ -23,54 +144,27 @@ class DataService(data_pb2_grpc.DataServiceServicer):
         info("data: get_live_reads")
         # Handle incoming requests from the client
         for request in request_iterator:
+            action_responses = []
+
             if request.HasField("setup"):
-                # Handle StreamSetup request -- todo
-                print(f"Received StreamSetup: first_channel={request.setup.first_channel}, "
-                      f"last_channel={request.setup.last_channel}, "
-                      f"raw_data_type={request.setup.raw_data_type}")
-                # You can store the setup configuration for later use
-                self.setup_config = request.setup
+                self._setup(request.setup)
 
             elif request.HasField("actions"):
-                # Handle Actions request
-                for action in request.actions.actions:
-                    print(f"Received Action: action_id={action.action_id}, "
-                          f"channel={action.channel}, read_id={action.id}")
-                    # Simulate processing the action -- todo
-                    action_response = data_pb2.GetLiveReadsResponse.ActionResponse(
-                        action_id=action.action_id,
-                        response=data_pb2.GetLiveReadsResponse.ActionResponse.Response.SUCCESS
-                    )
-                    yield data_pb2.GetLiveReadsResponse(
-                        action_responses=[action_response]
-                    )
+                if self.setup is not None:
+                    action_responses = self._perform_actions(request.actions)
 
-            if self.setup_config is not None:
-                # Simulate sending live reads to the client
-                read_data = data_pb2.GetLiveReadsResponse.ReadData(
-                    id="read_123",
-                    start_sample=1000,
-                    chunk_start_sample=1000,
-                    chunk_length=200,
-                    chunk_classifications=[1, 2, 3],
-                    raw_data=b"raw_data_bytes",
-                    median_before=50.0,
-                    median=55.0,
-                    previous_read_classification=1,
-                    previous_read_end_reason=data_pb2.statistics.ReadEndReason.UNBLOCK
-                )
-                yield data_pb2.GetLiveReadsResponse(
-                    samples_since_start=1000,
-                    seconds_since_start=10.0,
-                    channels={
-                        1: read_data
-                    }
-                )
-            else:
-                yield data_pb2.GetLiveReadsResponse(
-                    samples_since_start=0,
-                    seconds_since_start=0.0,
-                    channels={}
-                )
+            # if self.setup is not None:
+            #     data_responses = self._get_data()
 
+            info("data: packaging reads...")
+            data_responses = self._get_data()
 
+            info("data: sending reads...")
+            yield data_pb2.GetLiveReadsResponse(
+                channels = data_responses,
+                action_responses = action_responses,
+                samples_since_start = 4000, # fixme
+                seconds_since_start = 1,    # fixme
+            )
+
+            info("data: done")

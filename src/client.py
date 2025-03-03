@@ -1,23 +1,30 @@
-import ssl
-
 import grpc
 
-from minknow_api import Connection
-from credentials import *
-from minknow_api import manager_service
+from minknow_api import data_pb2, Connection
+from minknow_api.data import get_numpy_types
+
+
+def generate_setup_stream():
+    yield data_pb2.GetLiveReadsRequest(
+        setup=data_pb2.GetLiveReadsRequest.StreamSetup(
+            first_channel=1,
+            last_channel=512,
+            raw_data_type=data_pb2.GetLiveReadsRequest.RawDataType.UNCALIBRATED,
+            sample_minimum_chunk_size=0,
+        )
+    )
 
 def main():
-    try:
-        c = Connection(host='localhost', port=50051,
-                       client_certificate_chain=load_credential_from_file(CLIENT_CERT_FILE),
-                       client_private_key=load_credential_from_file(CLIENT_KEY_FILE)
-                       )
-        print('Connection established')
-        print(c.device.get_flow_cell_info().channel_count)
-    except grpc.RpcError as e:
-        print("Error connecting to server: %s" % e)
+    connection = Connection(host="localhost", port=50051)
+    setup_request = generate_setup_stream()
 
+    reads = connection.data.get_live_reads(setup_request)
+    for reads_chunk in reads:
+        for read_channel in reads_chunk.channels:
+            read = reads_chunk.channels[read_channel]
+            print(read)
 
 
 if __name__ == "__main__":
     main()
+

@@ -7,6 +7,8 @@ from acquisition_service import *
 from analysis_configuration_service import *
 from data_service import *
 from device_service import *
+from protocol_service import *
+from log_service import *
 
 def serve():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
@@ -18,6 +20,8 @@ def serve():
     analysis_configuration_pb2_grpc.add_AnalysisConfigurationServiceServicer_to_server(AnalysisConfigurationService(), server)
     data_pb2_grpc.add_DataServiceServicer_to_server(DataService(), server)
     device_pb2_grpc.add_DeviceServiceServicer_to_server(DeviceService(), server)
+    protocol_pb2_grpc.add_ProtocolServiceServicer_to_server(ProtocolService(), server)
+    log_pb2_grpc.add_LogServiceServicer_to_server(LogService(), server)
 
     # Load SSL credentials
     server_credentials = grpc.ssl_server_credentials([
