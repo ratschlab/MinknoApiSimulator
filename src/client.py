@@ -3,6 +3,7 @@ import grpc
 from minknow_api import data_pb2, Connection
 from minknow_api.data import get_numpy_types
 import numpy as np
+import time
 
 
 def generate_setup_stream():
@@ -25,13 +26,16 @@ def pretty_print(channel, read):
 
 def main():
     connection = Connection(host="localhost", port=50051)
-    setup_request = generate_setup_stream()
+    # setup_request = generate_setup_stream()
 
-    reads = connection.data.get_live_reads(setup_request)
-    for reads_chunk in reads:
-        for read_channel in reads_chunk.channels:
-            read = reads_chunk.channels[read_channel]
-            pretty_print(read_channel, read)
+    while True:
+        setup_request = generate_setup_stream()
+        reads = connection.data.get_live_reads(setup_request)
+        for reads_chunk in reads:
+            for read_channel in reads_chunk.channels:
+                read = reads_chunk.channels[read_channel]
+                pretty_print(read_channel, read)
+        time.sleep(1)
 
 
 if __name__ == "__main__":
