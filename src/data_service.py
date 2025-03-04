@@ -99,11 +99,12 @@ class DataService(data_pb2_grpc.DataServiceServicer):
         # self.accepted_first_chunk_classifications = config.accepted_first_chunk_classifications
 
     def _perform_actions(self, actions):
+        info("data: perform_actions")
         return [self._perform_action(action) for action in actions]
 
     def _perform_action(self, action):
-        info(f"Received Action: action_id={action.action_id}, "
-              f"channel={action.channel}, read_id={action.id}")
+        # info(f"Received Action: action_id={action.action_id}, "
+        #       f"channel={action.channel}, read_id={action.id}")
 
         # Simulate processing the action -- todo
 
@@ -156,15 +157,17 @@ class DataService(data_pb2_grpc.DataServiceServicer):
             # if self.setup is not None:
             #     data_responses = self._get_data()
 
-            info("data: packaging reads...")
-            data_responses = self._get_data()
+            while True:
+                info("data: packaging reads...")
+                data_responses = self._get_data()
 
-            info("data: sending reads...")
-            yield data_pb2.GetLiveReadsResponse(
-                channels = data_responses,
-                action_responses = action_responses,
-                samples_since_start = 4000, # fixme
-                seconds_since_start = 1,    # fixme
-            )
+                info("data: sending reads...")
+                yield data_pb2.GetLiveReadsResponse(
+                    channels = data_responses,
+                    action_responses = action_responses,
+                    samples_since_start = 4000, # fixme
+                    seconds_since_start = 1,    # fixme
+                )
 
-            info("data: done")
+                info("data: done")
+                time.sleep(1)
