@@ -12,7 +12,7 @@ class AcquisitionService(acquisition_pb2_grpc.AcquisitionServiceServicer):
         )
 
     def get_acquisition_info(self, request, context):
-        info("acquisition: get_acquisition_info")
+        # info("acquisition: get_acquisition_info")
         # state
         return acquisition_pb2.AcquisitionRunInfo(
             state = acquisition_pb2.AcquisitionState.ACQUISITION_RUNNING

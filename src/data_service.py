@@ -8,6 +8,9 @@ from dataclasses import dataclass
 import time
 from read5 import read
 
+import threading
+import queue
+
 
 blow5_file = "/scratch/Zymo/signal/blow5/s180/0/Sigs-0.blow5"
 fast5_file = "/scratch/Zymo/signal/fast5/s180/0/Sigs-0.fast5"
@@ -65,13 +68,13 @@ class ReadDataThreads:
             elif i in self.eject:
                 self._eject(i)
             elif self.reads[i] is not None:
-                data[i] = package_read(self.reads[i], self.offsets[i])
+                data[i+1] = package_read(self.reads[i], self.offsets[i])
         return data
 
 class DataService(data_pb2_grpc.DataServiceServicer):
     def __init__(self):
         self.setup = False
-        self.frst_channel = 0
+        self.first_channel = 0
         self.last_channel = 0
         self.raw_data_type = data_pb2.GetLiveReadsRequest.RawDataType.KEEP_LAST
         # self.reader_process = Process(target=server)
@@ -81,6 +84,7 @@ class DataService(data_pb2_grpc.DataServiceServicer):
         # self.server_socket.connect("ipc:///tmp/mksim")
         self.read_data_threads = ReadDataThreads(blow5_file, 512)
         self.last_sampled = time.time()
+
 
     def _setup(self, config):
         info("data: get_live_reads.setup")
@@ -100,7 +104,7 @@ class DataService(data_pb2_grpc.DataServiceServicer):
 
     def _perform_actions(self, actions):
         info("data: perform_actions")
-        return [self._perform_action(action) for action in actions]
+        return [self._perform_action(action) for action in actions.actions]
 
     def _perform_action(self, action):
         # info(f"Received Action: action_id={action.action_id}, "
@@ -108,12 +112,9 @@ class DataService(data_pb2_grpc.DataServiceServicer):
 
         # Simulate processing the action -- todo
 
-        action_response = data_pb2.GetLiveReadsResponse.ActionResponse(
+        return data_pb2.GetLiveReadsResponse.ActionResponse(
             action_id=action.action_id,
             response=data_pb2.GetLiveReadsResponse.ActionResponse.Response.SUCCESS
-        )
-        yield data_pb2.GetLiveReadsResponse(
-            action_responses=[action_response]
         )
 
     def _get_data(self):
@@ -143,31 +144,32 @@ class DataService(data_pb2_grpc.DataServiceServicer):
 
     def get_live_reads(self, request_iterator, context):
         info("data: get_live_reads")
-        # Handle incoming requests from the client
-        for request in request_iterator:
-            action_responses = []
 
-            if request.HasField("setup"):
-                self._setup(request.setup)
+        response_queue = queue.Queue()
 
-            elif request.HasField("actions"):
-                if self.setup is not None:
+        def request_handler():
+            for request in request_iterator:
+                if request.HasField("setup"):
+                    self._setup(request.setup)
+                elif request.HasField("actions"):
                     action_responses = self._perform_actions(request.actions)
+                    response_queue.put(action_responses)
 
-            # if self.setup is not None:
-            #     data_responses = self._get_data()
+        # Start request handler in a separate thread
+        threading.Thread(target=request_handler, daemon=True).start()
 
-            while True:
-                info("data: packaging reads...")
-                data_responses = self._get_data()
+        while True:
+            info("data: packaging reads...")
+            data_responses = self._get_data()
+            action_responses = [] if response_queue.empty() else response_queue.get()
 
-                info("data: sending reads...")
-                yield data_pb2.GetLiveReadsResponse(
-                    channels = data_responses,
-                    action_responses = action_responses,
-                    samples_since_start = 4000, # fixme
-                    seconds_since_start = 1,    # fixme
-                )
+            info("data: sending reads...")
+            yield data_pb2.GetLiveReadsResponse(
+                channels = data_responses,
+                action_responses = action_responses,
+                samples_since_start = 4000, # fixme
+                seconds_since_start = 1,    # fixme
+            )
 
-                info("data: done")
-                time.sleep(1)
+            info("data: done")
+            time.sleep(1)

@@ -9,7 +9,7 @@ class ProtocolService(protocol_pb2_grpc.ProtocolServiceServicer):
         )
 
     def get_current_protocol_run(self, request, context):
-        info("protocol: get_current_protocol_run")
+        # info("protocol: get_current_protocol_run")
         return protocol_pb2.ProtocolRunInfo(
             run_id = "test_run",
             output_path = "/home/sayan/PyCharmProjects/MinknoApiSimulator/simout",
