@@ -26,7 +26,7 @@ def package_read(read: Read, start: int):
         id=read.rid,
         chunk_classifications=[83], # strand
         chunk_length=length,
-        raw_data=read.signal[start:start + length],
+        raw_data=read.signal[start:start + length].tobytes(),
     )
 
 
