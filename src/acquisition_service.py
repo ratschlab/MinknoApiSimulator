@@ -6,7 +6,7 @@ class AcquisitionService(acquisition_pb2_grpc.AcquisitionServiceServicer):
         info("acquisition: get_progress")
         # raw_per_channel
         return acquisition_pb2.GetProgressResponse(
-            acquisition_pb2.GetProgressResponse.RawPerChannel(
+            raw_per_channel = acquisition_pb2.GetProgressResponse.RawPerChannel(
                 acquired = 123, processed = 456
             )
         )
@@ -15,5 +15,5 @@ class AcquisitionService(acquisition_pb2_grpc.AcquisitionServiceServicer):
         info("acquisition: get_acquisition_info")
         # state
         return acquisition_pb2.AcquisitionRunInfo(
-            state = acquisition_pb2.AcquisitionState.ACQUISITION_STARTING
+            state = acquisition_pb2.AcquisitionState.ACQUISITION_RUNNING
         )
