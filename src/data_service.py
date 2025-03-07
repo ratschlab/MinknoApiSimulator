@@ -61,7 +61,6 @@ class DataService(data_pb2_grpc.DataServiceServicer):
         while True:
             if not self.response_queue.empty():
                 action_responses, data_responses = self.response_queue.get()
-                info("data: sending reads...")
                 yield data_pb2.GetLiveReadsResponse(
                     channels = data_responses,
                     action_responses = action_responses,
@@ -69,5 +68,4 @@ class DataService(data_pb2_grpc.DataServiceServicer):
                     seconds_since_start = 1,    # fixme
                 )
 
-            info("data: done")
             time.sleep(.2)
