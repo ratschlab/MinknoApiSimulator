@@ -1,4 +1,5 @@
 from prelude import *
+from test_utils import *
 from enum import Enum
 from minknow_api import data_pb2, data_pb2_grpc
 from multiprocessing import Process
@@ -172,6 +173,7 @@ class Sequencer:
             time.sleep(SAMPLE_DURATION - (time.monotonic() - self.last_sampled))
             self.last_sampled = time.monotonic()
             self.response_queue.put((action_responses, data_response))
+            blurt("{}A-{}D".format(len(action_responses), len(data_response)), color=RED)
 
     def __update_pores(self):
         """
@@ -194,5 +196,5 @@ class Sequencer:
         return action_requests
 
     def __perform_actions(self, actions):
-        return [self.pores[action.channel-1].perform_action for action in actions]
+        return [self.pores[action.channel-1].perform_action(action) for action in actions]
 

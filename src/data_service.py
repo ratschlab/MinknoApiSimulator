@@ -1,4 +1,5 @@
 from prelude import *
+from test_utils import *
 from minknow_api import data_pb2, data_pb2_grpc
 import time
 
@@ -48,24 +49,33 @@ class DataService(data_pb2_grpc.DataServiceServicer):
         info("data: get_live_reads")
 
         def request_handler():
-            for request in request_iterator:
-                if request.HasField("setup"):
-                    self._setup(request.setup)
-                elif request.HasField("actions"):
-                    for action in request.actions:
-                        self.request_queue.put(action)
+            try:
+                for request in request_iterator:
+                    if request.HasField("setup"):
+                        self._setup(request.setup)
+                    elif request.HasField("actions"):
+                        for action in request.actions.actions:
+                            self.request_queue.put(action)
+            except Exception as e:
+                print(e)
 
         # Start request handler in a separate thread
-        threading.Thread(target=request_handler, daemon=True).start()
+        rht = threading.Thread(target=request_handler, daemon=True)
+        rht.start()
 
-        while True:
+        while context.is_active():
             if not self.response_queue.empty():
                 action_responses, data_responses = self.response_queue.get()
-                yield data_pb2.GetLiveReadsResponse(
-                    channels = data_responses,
-                    action_responses = action_responses,
-                    samples_since_start = 4000, # fixme
-                    seconds_since_start = 1,    # fixme
-                )
+                blurt("A%d-D%d" % (len(action_responses), len(data_responses)), color=CYN)
+                try:
+                    yield data_pb2.GetLiveReadsResponse(
+                        channels = data_responses,
+                        action_responses = action_responses,
+                        samples_since_start = 4000, # fixme
+                        seconds_since_start = 1,    # fixme
+                    )
+                except Exception as e:
+                    print(e)
+            time.sleep(.1)
 
-            time.sleep(.2)
+        rht.join()
