@@ -10,5 +10,7 @@ class InstanceService(instance_pb2_grpc.InstanceServiceServicer):
             distribution_version="6.0.0",
             distribution_status=instance_pb2.GetVersionInfoResponse.DistributionStatus.STABLE,
             protocol_configuration="a.b.c",
-            installation_type=instance_pb2.GetVersionInfoResponse.InstallationType.NC
+            installation_type=instance_pb2.GetVersionInfoResponse.InstallationType.NC,
+            basecaller_build_version="7.4.12+0e5e75c49",
+            basecaller_connected_version="7.4.12+0e5e75c49"
         )

@@ -17,7 +17,7 @@ class DataService(data_pb2_grpc.DataServiceServicer):
         self.first_channel = 0
         self.last_channel = 0
         self.raw_data_type = data_pb2.GetLiveReadsRequest.RawDataType.KEEP_LAST
-        self.sequencer = Sequencer(filename=blow5_file, n_channels=512)
+        self.sequencer = Sequencer(filename=pod5_file, n_channels=512)
         self.request_queue, self.response_queue = self.sequencer.get_queues()
         self.sequencer.start()
 

@@ -76,13 +76,17 @@ class Pore:
             if self.sequence and self.sequence.has_more():
                 self.sequence.advance()
             else:
-                rid = next(self.r5)
-                if rid is None:
+                try:
+                    rid = next(self.r5)
+                    if rid is None:
+                        self.sequence = None
+                        self.file_consumed = True
+                    else:
+                        self.sequence = Sequence(rid, self.r5.getSignal(rid))
+                        self.stop_sending = False
+                except StopIteration:
                     self.sequence = None
                     self.file_consumed = True
-                else:
-                    self.sequence = Sequence(rid, self.r5.getSignal(rid))
-                    self.stop_sending = False
 
     def get_signal_chunk(self):
         """
@@ -170,7 +174,9 @@ class Sequencer:
             action_requests = self.__collect_action_requests()
             action_responses = self.__perform_actions(action_requests)
             data_response = self.__update_pores()
-            time.sleep(SAMPLE_DURATION - (time.monotonic() - self.last_sampled))
+            sleep_time = SAMPLE_DURATION - (time.monotonic() - self.last_sampled)
+            if sleep_time > 0:
+                time.sleep(SAMPLE_DURATION - (time.monotonic() - self.last_sampled))
             self.last_sampled = time.monotonic()
             self.response_queue.put((action_responses, data_response))
             blurt("{}A-{}D".format(len(action_responses), len(data_response)), color=RED)
