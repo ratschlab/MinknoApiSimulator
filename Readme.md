@@ -11,7 +11,8 @@ source .venv/bin/activate
 pip install -r requirements.txt
 
 # Run the server and the client
-python src/server.py &
+source .env.sh
+python src/server.py --input <input file or directory> &
 python src/client.py
 ```
 
@@ -19,7 +20,7 @@ python src/client.py
 ## TODO
 - [ ] Logging
 - [ ] Graceful exit
-- [ ] Remove version hardcoding from manager and instance services (currently hardcoded to "6.0.0")
-- [ ] Remove hardcoded flowcell name from manager service (currently hardcoded to "MN12345")
-- [ ] Remove hardcoded run_id from protocol (currently hardcoded to "test_run")
-- [ ] Fix acquisition progress
+- [x] Remove version hardcoding from manager and instance services (currently hardcoded to "6.0.0")
+- [x] Remove hardcoded flowcell name from manager service (currently hardcoded to "MN12345")
+- [x] Remove hardcoded run_id from protocol (currently hardcoded to "test_run")
+- [x] Fix acquisition progress
