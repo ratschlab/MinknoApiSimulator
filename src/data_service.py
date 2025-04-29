@@ -1,28 +1,24 @@
-from prelude import *
-from test_utils import *
 from minknow_api import data_pb2, data_pb2_grpc
 import time
 
 import threading
-import queue
 from sequencer import Sequencer
 
 blow5_file = "/scratch/Zymo/signal/blow5/s180/0/Sigs-0.blow5"
 fast5_file = "/scratch/Zymo/signal/fast5/s180/0/Sigs-0.fast5"
-pod5_file = "/data/PBA70346_skip_5c03b04e_00bcc91b_0.pod5"
+pod5_file = "/scratch/Virus/signals/run1/FAX92437_skip_b70ee17b_f7e18d8f_0.pod5"
 
 class DataService(data_pb2_grpc.DataServiceServicer):
-    def __init__(self):
+    def __init__(self, sequencer: Sequencer):
+        self.sequencer = sequencer
         self.setup = False
         self.first_channel = 0
         self.last_channel = 0
         self.raw_data_type = data_pb2.GetLiveReadsRequest.RawDataType.KEEP_LAST
-        self.sequencer = Sequencer(filename=pod5_file, n_channels=512)
         self.request_queue, self.response_queue = self.sequencer.get_queues()
         self.sequencer.start()
 
     def _setup(self, config):
-        info("data: get_live_reads.setup")
         print(f"Received StreamSetup: first_channel={config.first_channel}, "
               f"last_channel={config.last_channel}, "
               f"raw_data_type={config.raw_data_type}")
@@ -32,7 +28,6 @@ class DataService(data_pb2_grpc.DataServiceServicer):
         self.raw_data_type = config.raw_data_type
 
     def get_data_types(self, request, context):
-        info("data: get_data_types")
         return data_pb2.GetDataTypesResponse(
             uncalibrated_signal = data_pb2.GetDataTypesResponse.DataType(
                 type=data_pb2.GetDataTypesResponse.DataType.Type.SIGNED_INTEGER, big_endian=False, size=2
@@ -46,7 +41,6 @@ class DataService(data_pb2_grpc.DataServiceServicer):
         )
 
     def get_live_reads(self, request_iterator, context):
-        info("data: get_live_reads")
 
         def request_handler():
             try:
@@ -65,14 +59,13 @@ class DataService(data_pb2_grpc.DataServiceServicer):
 
         while context.is_active():
             if not self.response_queue.empty():
-                action_responses, data_responses = self.response_queue.get()
-                blurt("A%d-D%d" % (len(action_responses), len(data_responses)), color=CYN)
+                action_responses, data_responses, samples_since_start, seconds_since_start = self.response_queue.get()
                 try:
                     yield data_pb2.GetLiveReadsResponse(
                         channels = data_responses,
                         action_responses = action_responses,
-                        samples_since_start = 4000, # fixme
-                        seconds_since_start = 1,    # fixme
+                        samples_since_start = samples_since_start,
+                        seconds_since_start = seconds_since_start,
                     )
                 except Exception as e:
                     print(e)

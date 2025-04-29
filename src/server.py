@@ -14,11 +14,12 @@ def serve():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
 
     # Add the service implementation to the server
+    sequencer = Sequencer()
     manager_pb2_grpc.add_ManagerServiceServicer_to_server(ManagerService(), server)
     instance_pb2_grpc.add_InstanceServiceServicer_to_server(InstanceService(), server)
-    acquisition_pb2_grpc.add_AcquisitionServiceServicer_to_server(AcquisitionService(), server)
+    acquisition_pb2_grpc.add_AcquisitionServiceServicer_to_server(AcquisitionService(sequencer), server)
     analysis_configuration_pb2_grpc.add_AnalysisConfigurationServiceServicer_to_server(AnalysisConfigurationService(), server)
-    data_pb2_grpc.add_DataServiceServicer_to_server(DataService(), server)
+    data_pb2_grpc.add_DataServiceServicer_to_server(DataService(sequencer), server)
     device_pb2_grpc.add_DeviceServiceServicer_to_server(DeviceService(), server)
     protocol_pb2_grpc.add_ProtocolServiceServicer_to_server(ProtocolService(), server)
     log_pb2_grpc.add_LogServiceServicer_to_server(LogService(), server)
@@ -40,4 +41,5 @@ def serve():
 
 
 if __name__ == "__main__":
+    config.get_params()
     serve()

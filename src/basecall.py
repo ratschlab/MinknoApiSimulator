@@ -115,24 +115,6 @@ def main(signal_in, fasta_out, config, address):
     print('%d reads processed' % i)
 
 
-def test(signal_in, fasta_out, config, address):
-    client = pclient(address=address, config=config)
-    client.connect()
-    print(client.get_protocol_version())
-    print(client.get_software_version())
-
-    # Using the client generated in the previous example
-    called_reads = basecall_with_pybasecall_client(client, signal_in)
-
-    for read in called_reads:
-        read_id = read['metadata']['read_id']
-        alignment_genome = read['metadata']['alignment_genome']
-        sequence = read['datasets']['sequence']
-        print(f"{read_id} sequence length is {len(sequence)}"
-              f"alignment_genome is {alignment_genome}")
-
-
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("signal_in", type=str, help="Signal file (fast5/pod5/slow5/blow5)")

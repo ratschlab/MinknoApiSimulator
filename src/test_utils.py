@@ -1,4 +1,4 @@
-from prelude import *
+from logs import *
 
 RED   = "\x1B[31m"
 GRN   = "\x1B[32m"
