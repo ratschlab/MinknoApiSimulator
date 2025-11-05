@@ -4,7 +4,7 @@ from typing import List
 
 @dataclass
 class Params:
-    input: str
+    input: List[str]
     name: str = 'MN12345'
     port: int = 50051
     channel_count: int = 512
@@ -16,7 +16,6 @@ class Params:
     run_id: str = 'test_run'
     output_path: str = "/tmp/MinknoApiSimulator/out"
     wait_seconds: int = 10
-
 
 params = None
 
@@ -75,8 +74,7 @@ def get_params() -> None:
             # For List fields, handle them as an optional list of values
             parser.add_argument(
                 f'--{field.name}',
-                type=str,
-                nargs='+',  # Accepts multiple values
+                action='append',  # Accepts multiple values
                 required=is_required,  # Only set required if field has no default
                 help=f"List of {field.name} values"
             )

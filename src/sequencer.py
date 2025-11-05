@@ -6,31 +6,69 @@ from time import sleep
 from minknow_api import data_pb2, acquisition_pb2
 from read5 import read
 import os
+from pathlib import Path
 
 from test_utils import *
 import config
 
 class Reader():
+    VALID_EXTENSIONS = ('.fast5', '.pod5', '.slow5', '.blow5')
+
     def __init__(self):
         Log.info("Creating reader on", config.params.input)
-        self.signal_files = []
-        inputpath = os.path.abspath(config.params.input)
-        if os.path.exists(inputpath):
-            if os.path.isfile(inputpath):
-                if not inputpath.endswith(('.fast5', '.pod5', '.slow5', '.blow5')):
-                    Log.error('File %s does not have the correct extension.' % inputpath)
-                else:
-                    self.signal_files.append(inputpath)
-            elif os.path.isdir(inputpath):
-                for filename in os.listdir(inputpath):
-                    if filename.endswith(('.fast5', '.pod5', '.slow5', '.blow5')):
-                        self.signal_files.append(os.path.join(inputpath, filename))
-                if not self.signal_files:
-                    Log.error('No signal files found in %s' % inputpath)
-        else: Log.error('File/Folder %s not found' % inputpath)
 
-        self.done = False
-        self.__open_next_file()
+        if not isinstance(config.params.input, list):
+            Log.error("Input must be a list of paths.")
+            self.signal_files = []
+            self.done = True
+            return
+
+        found_files_set = set()
+
+        for path_str in config.params.input:
+            try:
+                input_path = Path(path_str).resolve(strict=True)
+                files_from_path = self._discover_files(input_path)
+                found_files_set.update(files_from_path)
+
+            except FileNotFoundError:
+                Log.warn(f"Input path not found, skipping: {path_str}")
+            except ValueError as e:
+                Log.warn(f"Error processing path '{path_str}', skipping: {e}")
+
+        # Final check after the loop
+        if not found_files_set:
+            Log.error("Failed to initialize reader: No valid signal files found in any provided paths.")
+            self.signal_files = []
+            self.done = True
+        else:
+            self.signal_files = sorted(list(found_files_set))
+            self.done = False
+            Log.info(f"Reader created. Found {len(self.signal_files)} unique file(s).")
+            self.__open_next_file()
+
+    def _discover_files(self, path: Path) -> list[str]:
+        """
+        Finds all valid signal files using pathlib.
+        Returns a list of file paths as strings.
+        """
+        if path.is_file():
+            if path.suffix not in self.VALID_EXTENSIONS:
+                raise ValueError(f'File {path} does not have a valid extension.')
+            return [str(path)]  # Return as a list of strings
+
+        if path.is_dir():
+            # This list comprehension is much cleaner than the for-loop
+            found_files = [
+                str(file) for file in path.iterdir()
+                if file.suffix in self.VALID_EXTENSIONS and file.is_file()
+            ]
+
+            if not found_files:
+                raise ValueError(f'No valid signal files found in directory: {path}')
+            return found_files
+
+        raise ValueError(f'Input path {path} is not a file or directory.')
 
     def __open_next_file(self):
         if self.signal_files:

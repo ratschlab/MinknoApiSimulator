@@ -6,6 +6,7 @@ import numpy as np
 import time
 import queue
 
+from src.credentials import *
 from test_utils import *
 
 def pretty_print(channel, read):
@@ -74,7 +75,14 @@ def unblock_all(connection: Connection):
 
 
 def main():
-    connection = Connection(host="localhost", port=50051)
+    # Load SSL credentials
+    credentials = grpc.ssl_channel_credentials(
+        private_key=load_credential_from_file(CLIENT_KEY_FILE),
+        certificate_chain=load_credential_from_file(CLIENT_CERT_FILE))
+    connection = Connection(host="localhost", port=50051,
+                            client_private_key=load_credential_from_file(CLIENT_KEY_FILE),
+                            client_certificate_chain=load_credential_from_file(CLIENT_CERT_FILE),
+                            ca_certificate=load_credential_from_file(SERVER_CERT_FILE),)
     unblock_all(connection)
 
 
