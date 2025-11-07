@@ -214,6 +214,7 @@ class Sequencer:
         self.samples_since_start = 0
         self.thread = None
         self._acquisition_state = acquisition_pb2.AcquisitionState.ACQUISITION_STARTING
+        Path(config.params.output_path).mkdir(parents=True, exist_ok=True)
         Log.info('ACQUISITION_STARTING')
 
     def get_queues(self):
