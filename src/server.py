@@ -1,5 +1,8 @@
 import grpc
 from concurrent import futures
+
+from anyio import sleep
+
 from credentials import *
 from manager_service import *
 from instance_service import *
@@ -9,6 +12,7 @@ from data_service import *
 from device_service import *
 from protocol_service import *
 from log_service import *
+import config
 
 def serve():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
@@ -34,10 +38,19 @@ def serve():
 
     # Start the server
     server.start()
-    print("🔹Sync gRPC server is running on port 50051...")
+    print("Sync gRPC server is running on port 50051...")
+
+    # Thread to watch for stop signal
+    def monitor_stop():
+        config.stop_event.wait()  # blocks until stop_event.set() is called
+        Log.info("Stop signal received, shutting down...")
+        server.stop(grace=5).wait()  # <— Gracefully stop
+
+    threading.Thread(target=monitor_stop, daemon=True).start()
 
     # Keep the server running indefinitely
     server.wait_for_termination()
+    Log.info("Server stopped.")
 
 
 if __name__ == "__main__":

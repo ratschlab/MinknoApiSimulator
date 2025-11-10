@@ -1,6 +1,9 @@
 import argparse
 from dataclasses import dataclass, fields
 from typing import List
+import threading
+
+stop_event = threading.Event()
 
 @dataclass
 class Params:

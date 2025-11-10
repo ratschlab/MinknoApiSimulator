@@ -19,7 +19,7 @@ python src/client.py
 
 ## TODO
 - [ ] Logging
-- [ ] Graceful exit
+- [x] Graceful exit
 - [x] Remove version hardcoding from manager and instance services (currently hardcoded to "6.0.0")
 - [x] Remove hardcoded flowcell name from manager service (currently hardcoded to "MN12345")
 - [x] Remove hardcoded run_id from protocol (currently hardcoded to "test_run")

@@ -4,10 +4,6 @@ import time
 import threading
 from sequencer import Sequencer
 
-blow5_file = "/scratch/Zymo/signal/blow5/s180/0/Sigs-0.blow5"
-fast5_file = "/scratch/Zymo/signal/fast5/s180/0/Sigs-0.fast5"
-pod5_file = "/scratch/Virus/signals/run1/FAX92437_skip_b70ee17b_f7e18d8f_0.pod5"
-
 class DataService(data_pb2_grpc.DataServiceServicer):
     def __init__(self, sequencer: Sequencer):
         self.sequencer = sequencer

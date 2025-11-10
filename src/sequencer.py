@@ -11,7 +11,7 @@ from pathlib import Path
 from test_utils import *
 import config
 
-class Reader():
+class Reader:
     VALID_EXTENSIONS = ('.fast5', '.pod5', '.slow5', '.blow5')
 
     def __init__(self):
@@ -143,6 +143,12 @@ class Pore:
         self.stop_sending = False
         self.file_consumed = False
 
+        # stats
+        self.n_ejected = 0
+        self.n_proceeded = 0
+        self.n_reads = 0
+        self.n_missed = 0
+
     def update(self):
         """
         Update the pore by either advancing the sequence through the pore or admitting a new sequence
@@ -156,6 +162,7 @@ class Pore:
                 self.sequence = next(self.reader)
                 self.stop_sending = False
                 if not self.sequence: self.file_consumed = True
+                else: self.n_reads += 1
 
     def get_signal_chunk(self):
         """
@@ -185,13 +192,16 @@ class Pore:
         if (not read_id and self.sequence) or (self.sequence and read_id != self.sequence.id):
             if action.HasField('unblock'):
                 self.__eject()
+                self.n_ejected += 1
             elif action.HasField('stop_further_data'):
                 self.stop_sending = True
+                self.n_proceeded += 1
             return data_pb2.GetLiveReadsResponse.ActionResponse(
                 action_id=action_id, response=data_pb2.GetLiveReadsResponse.ActionResponse.Response.SUCCESS
             )
         else:
             # there is no sequence in the pore, or the read_id of the action does not match with the current sequence
+            self.n_missed += 1
             return data_pb2.GetLiveReadsResponse.ActionResponse(
                 action_id=action_id, response=data_pb2.GetLiveReadsResponse.ActionResponse.Response.FAILED_READ_FINISHED
             )
@@ -213,6 +223,9 @@ class Sequencer:
         self.last_sampled = 0.0
         self.samples_since_start = 0
         self.thread = None
+        self.n_iters = 0
+        self.total_sleep_time = 0
+        self.log_interval = 10  # logs will be printer every `self.log_interval` iterations
         self._acquisition_state = acquisition_pb2.AcquisitionState.ACQUISITION_STARTING
         Log.info('ACQUISITION_STARTING')
 
@@ -231,6 +244,7 @@ class Sequencer:
     def stop(self):
         self.done = True    # fixme - not thread-safe
         self.thread.join()
+        config.stop_event.set()
 
     def __run(self):
         """
@@ -253,18 +267,25 @@ class Sequencer:
             if self.reader.done:
                 self._acquisition_state = acquisition_pb2.AcquisitionState.ACQUISITION_COMPLETED
                 self.done = True
-                print()
-                Log.info('ACQUISITION_COMPLETED')
             else:
                 sleep_time = config.params.chunk_time - (time.monotonic() - self.last_sampled)
+                self.total_sleep_time += sleep_time
                 if sleep_time > 0:
-                    time.sleep(config.params.chunk_time - (time.monotonic() - self.last_sampled))
+                    time.sleep(sleep_time)
                 self.last_sampled = time.monotonic()
-                Log.status("%d" % self.samples_since_start)
+                self.n_iters += 1
+                if self.n_iters % self.log_interval == 0:
+                    Log.status(self.get_status())
+                    self.total_sleep_time = 0
                 self.response_queue.put(
                     (action_responses, data_response, self.samples_since_start, self.samples_since_start/config.params.sample_rate)
                 )
                 self.samples_since_start += n_samples
+        print()
+        Log.info('ACQUISITION_COMPLETED')
+        # wait for 5 seconds for clients to disconnect
+        sleep(5)
+        config.stop_event.set()
 
     def __update_pores(self):
         """
@@ -294,20 +315,30 @@ class Sequencer:
     @property
     def acquired(self):
         """Number of samples (per channel) acquired from the device"""
-        yield int(self.samples_since_start/config.params.channel_count)
+        return int(self.samples_since_start/config.params.channel_count)
 
     @property
     def processed(self):
         """Number of samples (per channel) passed to the analysis pipeline for processing."""
-        yield self.acquired
+        return self.acquired
 
     @property
     def acquisition_state(self):
         # acquisition_pb2.AcquisitionState.ACQUISITION_RUNNING or ACQUISITION_STARTING or ACQUISITION_COMPLETED
-        yield self._acquisition_state
+        return self._acquisition_state
 
     @property
     def name(self):
         return config.params.name
+
+    def get_status(self):
+        return "#Iters: {}, Read: {}, Ejected: {}, Passed: {}, Missed: {}, Avg. wait: {:.2f}s".format(
+            self.n_iters,
+            sum(pore.n_reads for pore in self.pores),
+            sum(pore.n_ejected for pore in self.pores),
+            sum(pore.n_proceeded for pore in self.pores),
+            sum(pore.n_missed for pore in self.pores),
+            self.total_sleep_time/self.log_interval
+        )
 
 
