@@ -5,7 +5,6 @@ from time import sleep
 
 from minknow_api import data_pb2, acquisition_pb2
 from read5 import read
-import os
 from pathlib import Path
 
 from test_utils import *
@@ -278,7 +277,7 @@ class Sequencer:
                     Log.status(self.get_status())
                     self.total_sleep_time = 0
                 self.response_queue.put(
-                    (action_responses, data_response, self.samples_since_start, self.samples_since_start/config.params.sample_rate)
+                    (action_responses, data_response, self.samples_since_start, self.samples_since_start / config.params.sample_rate)
                 )
                 self.samples_since_start += n_samples
         print()
@@ -315,7 +314,7 @@ class Sequencer:
     @property
     def acquired(self):
         """Number of samples (per channel) acquired from the device"""
-        return int(self.samples_since_start/config.params.channel_count)
+        return int(self.samples_since_start / config.params.channel_count)
 
     @property
     def processed(self):

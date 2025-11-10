@@ -1,12 +1,11 @@
 import grpc
 
 from minknow_api import data_pb2, Connection
-from minknow_api.data import get_numpy_types
 import numpy as np
 import time
 import queue
 
-from src.credentials import *
+from src.mksim.credentials import *
 from test_utils import *
 
 def pretty_print(channel, read):

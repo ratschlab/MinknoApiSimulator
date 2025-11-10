@@ -1,5 +1,5 @@
 from minknow_api import manager_pb2, manager_pb2_grpc
-from minknow_api import instance_pb2, device_pb2
+from minknow_api import device_pb2
 
 from instance_service import get_instance_version_info
 import config
@@ -15,7 +15,7 @@ class ManagerService(manager_pb2_grpc.ManagerServiceServicer):
             name=config.params.name,
             location=manager_pb2.FlowCellPosition.Location(x=0, y=0),
             state=manager_pb2.FlowCellPosition.State.STATE_RUNNING,
-            rpc_ports=manager_pb2.FlowCellPosition.RpcPorts(secure=config.params.port, secure_grpc_web=config.params.port+1),
+            rpc_ports=manager_pb2.FlowCellPosition.RpcPorts(secure=config.params.port, secure_grpc_web=config.params.port + 1),
             error_info="",
             is_integrated=False,
             can_sequence_offline=True,

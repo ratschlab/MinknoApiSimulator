@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=64", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mksim"
+version = "0.1.0dev1"
+description = "Minknow API Simulator server"
+readme = "README.md"
+requires-python = ">=3.8"
+authors = [
+    { name = "Sayan Goswami", email = "sayan.goswami@grlab.org" }
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[project.scripts]
+mksimserver = "mksim.server:main"
+mksimclient = "mksim.client:main"
