@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "mksim"
-version = "0.1.0dev2"
+version = "1.0.0"
 description = "Minknow API Simulator server"
 readme = "README.md"
 requires-python = ">=3.8"
