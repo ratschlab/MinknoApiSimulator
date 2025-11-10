@@ -11,8 +11,8 @@ cd ..
 pip install .
 
 # Run the server and the client
-mksimserver --input <input file or directory> --input <input file or directory> &
-mksimclient
+mksimserver --certs ./certs --input <input file or directory> --input <input file or directory> &
+mksimclient ./certs
 ```
 
 Run `mksimserver --help` for options.
@@ -25,4 +25,4 @@ Run `mksimserver --help` for options.
 - [x] Remove hardcoded flowcell name from manager service (currently hardcoded to "MN12345")
 - [x] Remove hardcoded run_id from protocol (currently hardcoded to "test_run")
 - [x] Fix acquisition progress
-- [ ] Optional certs directory for pip install
+- [x] Optional certs directory for pip install

@@ -5,6 +5,7 @@ import queue
 
 from .credentials import *
 from .test_utils import *
+import sys
 
 def pretty_print(channel, read):
     data = np.frombuffer(read.raw_data, dtype=np.int16)
@@ -64,7 +65,8 @@ def unblock_all(connection: Connection):
             data_pb2.GetLiveReadsRequest.Action(
                 action_id="unblock_" + read.id,
                 channel=channel,
-                id=read.id
+                id=read.id,
+                unblock=data_pb2.GetLiveReadsRequest.UnblockAction()
             )
             for channel, read in reads_chunk.channels.items()
         ]
@@ -73,11 +75,17 @@ def unblock_all(connection: Connection):
 
 def main():
     # Load SSL credentials
+    Credentials.load(sys.argv[1])
     connection = Connection(host="localhost", port=50051,
-                            client_private_key=load_credential_from_file(CLIENT_KEY_FILE),
-                            client_certificate_chain=load_credential_from_file(CLIENT_CERT_FILE),
-                            ca_certificate=load_credential_from_file(SERVER_CERT_FILE),)
-    unblock_all(connection)
+                            client_private_key=Credentials.client_key(),
+                            client_certificate_chain=Credentials.client_cert(),
+                            ca_certificate=Credentials.server_cert(),)
+    if len(sys.argv) == 2 or sys.argv[2] == "eject":
+        unblock_all(connection)
+    elif sys.argv[2] == "print":
+        print_all(connection)
+    else:
+        print("Unknown option {}".format(sys.argv[2]))
 
 
 if __name__ == "__main__":

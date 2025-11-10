@@ -8,6 +8,7 @@ stop_event = threading.Event()
 @dataclass
 class Params:
     input: List[str]
+    certs: str
     name: str = 'MN12345'
     port: int = 50051
     channel_count: int = 512

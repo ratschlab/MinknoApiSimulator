@@ -12,7 +12,9 @@ from .log_service import *
 from . import config
 from .logs import *
 
-def serve():
+def main():
+    config.get_params()
+    Credentials.load(config.params.certs)
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
 
     # Add the service implementation to the server
@@ -28,7 +30,7 @@ def serve():
 
     # Load SSL credentials
     server_credentials = grpc.ssl_server_credentials([
-        (load_credential_from_file(SERVER_KEY_FILE), load_credential_from_file(SERVER_CERT_FILE))
+        (Credentials.server_key(), Credentials.server_cert())
     ])
 
     # Bind the server to a secure port
@@ -50,10 +52,6 @@ def serve():
     server.wait_for_termination()
     Log.info("Server stopped.")
 
-
-def main():
-    config.get_params()
-    serve()
 
 if __name__ == "__main__":
     main()

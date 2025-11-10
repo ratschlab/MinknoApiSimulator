@@ -13,17 +13,45 @@
 # limitations under the License.
 """Loading SSL credentials for gRPC Python authentication example."""
 
-from os.path import dirname, join
+import os
+from os.path import dirname
 
-PROJECT_ROOT = dirname(dirname(dirname(__file__)))
-CERT_DIR = PROJECT_ROOT + "/certs/"
-CLIENT_CERT_FILE = CERT_DIR + "client.pem"
-CLIENT_KEY_FILE = CERT_DIR + "client.key"
-SERVER_CERT_FILE = CERT_DIR + "server.pem"
-SERVER_KEY_FILE = CERT_DIR + "server.key"
+class Credentials:
+    certs_dir = None
+    client_cert_file = None
+    client_key_file = None
+    server_cert_file = None
+    server_key_file = None
 
-def load_credential_from_file(filepath, binary=True):
-    # real_path = os.path.join(os.path.dirname(__file__), filepath)
-    mode = 'rb' if binary else 'r'
-    with open(filepath, mode) as f:
-        return f.read()
+    @staticmethod
+    def load(certs_dir = None):
+        if certs_dir is None:
+            certs_dir = dirname(dirname(dirname(__file__)))
+        Credentials.certs_dir = certs_dir
+        Credentials.client_cert_file = os.path.join(certs_dir, "client.pem")
+        Credentials.client_key_file = os.path.join(certs_dir, "client.key")
+        Credentials.server_cert_file = os.path.join(certs_dir, "server.pem")
+        Credentials.server_key_file = os.path.join(certs_dir, "server.key")
+
+    @staticmethod
+    def client_key():
+        return Credentials._load_credential_from_file(Credentials.client_key_file)
+
+    @staticmethod
+    def server_key():
+        return Credentials._load_credential_from_file(Credentials.server_key_file)
+
+    @staticmethod
+    def client_cert():
+        return Credentials._load_credential_from_file(Credentials.client_cert_file)
+
+    @staticmethod
+    def server_cert():
+        return Credentials._load_credential_from_file(Credentials.server_cert_file)
+
+    @staticmethod
+    def _load_credential_from_file(filepath, binary=True):
+        # real_path = os.path.join(os.path.dirname(__file__), filepath)
+        mode = 'rb' if binary else 'r'
+        with open(filepath, mode) as f:
+            return f.read()
