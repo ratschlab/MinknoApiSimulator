@@ -7,8 +7,8 @@ from minknow_api import data_pb2, acquisition_pb2
 from read5 import read
 from pathlib import Path
 
-from test_utils import *
-import config
+from .test_utils import *
+from . import config
 
 class Reader:
     VALID_EXTENSIONS = ('.fast5', '.pod5', '.slow5', '.blow5')

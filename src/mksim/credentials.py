@@ -15,7 +15,7 @@
 
 from os.path import dirname, join
 
-PROJECT_ROOT = dirname(dirname(__file__))
+PROJECT_ROOT = dirname(dirname(dirname(__file__)))
 CERT_DIR = PROJECT_ROOT + "/certs/"
 CLIENT_CERT_FILE = CERT_DIR + "client.pem"
 CLIENT_KEY_FILE = CERT_DIR + "client.key"

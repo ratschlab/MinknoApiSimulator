@@ -1,7 +1,6 @@
-from logs import *
 from minknow_api import acquisition_pb2, acquisition_pb2_grpc
 
-from sequencer import Sequencer
+from .sequencer import Sequencer
 
 class AcquisitionService(acquisition_pb2_grpc.AcquisitionServiceServicer):
 

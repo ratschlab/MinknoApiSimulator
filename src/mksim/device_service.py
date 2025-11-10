@@ -1,4 +1,4 @@
-import config
+from . import config
 from minknow_api import device_pb2, device_pb2_grpc
 
 class DeviceService(device_pb2_grpc.DeviceServiceServicer):

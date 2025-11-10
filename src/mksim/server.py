@@ -1,15 +1,15 @@
 import grpc
 from concurrent import futures
-from credentials import *
-from manager_service import *
-from instance_service import *
-from acquisition_service import *
-from analysis_configuration_service import *
-from data_service import *
-from device_service import *
-from protocol_service import *
-from log_service import *
-import config
+from .credentials import *
+from .manager_service import *
+from .instance_service import *
+from .acquisition_service import *
+from .analysis_configuration_service import *
+from .data_service import *
+from .device_service import *
+from .protocol_service import *
+from .log_service import *
+from . import config
 
 def serve():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
@@ -50,6 +50,9 @@ def serve():
     Log.info("Server stopped.")
 
 
-if __name__ == "__main__":
+def main():
     config.get_params()
     serve()
+
+if __name__ == "__main__":
+    main()

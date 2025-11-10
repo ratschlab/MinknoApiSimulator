@@ -1,8 +1,8 @@
 from minknow_api import manager_pb2, manager_pb2_grpc
 from minknow_api import device_pb2
 
-from instance_service import get_instance_version_info
-import config
+from .instance_service import get_instance_version_info
+from . import config
 
 class ManagerService(manager_pb2_grpc.ManagerServiceServicer):
 

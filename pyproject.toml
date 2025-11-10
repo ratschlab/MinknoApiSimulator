@@ -4,12 +4,15 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "mksim"
-version = "0.1.0dev1"
+version = "0.1.0dev2"
 description = "Minknow API Simulator server"
 readme = "README.md"
 requires-python = ">=3.8"
 authors = [
     { name = "Sayan Goswami", email = "sayan.goswami@grlab.org" }
+]
+dependencies = [
+    "read5>=1.2.5",
 ]
 
 [tool.setuptools.packages.find]

@@ -2,7 +2,7 @@ from minknow_api import data_pb2, data_pb2_grpc
 import time
 
 import threading
-from sequencer import Sequencer
+from .sequencer import Sequencer
 
 class DataService(data_pb2_grpc.DataServiceServicer):
     def __init__(self, sequencer: Sequencer):

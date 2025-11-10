@@ -1,6 +1,6 @@
 from minknow_api import analysis_configuration_pb2, analysis_configuration_pb2_grpc
 import google.protobuf.wrappers_pb2 as wrappers_pb2
-import config
+from . import config
 
 
 class AnalysisConfigurationService(analysis_configuration_pb2_grpc.AnalysisConfigurationServiceServicer):

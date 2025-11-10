@@ -1,5 +1,5 @@
 
-import config
+from . import config
 from minknow_api import protocol_pb2, protocol_pb2_grpc
 
 class ProtocolService(protocol_pb2_grpc.ProtocolServiceServicer):

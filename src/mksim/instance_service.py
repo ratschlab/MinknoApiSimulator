@@ -1,6 +1,6 @@
 
 from minknow_api import instance_pb2, instance_pb2_grpc
-import config
+from . import config
 
 def get_instance_version_info():
     version_info_response = config.other_version_info

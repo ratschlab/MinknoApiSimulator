@@ -5,8 +5,8 @@ import numpy as np
 import time
 import queue
 
-from src.mksim.credentials import *
-from test_utils import *
+from .credentials import *
+from .test_utils import *
 
 def pretty_print(channel, read):
     data = np.frombuffer(read.raw_data, dtype=np.int16)
