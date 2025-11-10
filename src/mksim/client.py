@@ -1,5 +1,3 @@
-import grpc
-
 from minknow_api import data_pb2, Connection
 import numpy as np
 import time
@@ -75,9 +73,6 @@ def unblock_all(connection: Connection):
 
 def main():
     # Load SSL credentials
-    credentials = grpc.ssl_channel_credentials(
-        private_key=load_credential_from_file(CLIENT_KEY_FILE),
-        certificate_chain=load_credential_from_file(CLIENT_CERT_FILE))
     connection = Connection(host="localhost", port=50051,
                             client_private_key=load_credential_from_file(CLIENT_KEY_FILE),
                             client_certificate_chain=load_credential_from_file(CLIENT_CERT_FILE),

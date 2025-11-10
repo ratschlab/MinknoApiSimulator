@@ -10,6 +10,7 @@ from .device_service import *
 from .protocol_service import *
 from .log_service import *
 from . import config
+from .logs import *
 
 def serve():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))

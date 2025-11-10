@@ -21,3 +21,4 @@ def print_vectors(**kwargs):
 def blurt(*args, color=GRN):
     msg = (color,) + args + (RESET,)
     print(*msg, end=' ')
+    sys.stdout.flush()
