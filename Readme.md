@@ -26,3 +26,4 @@ Run `mksimserver --help` for options.
 - [x] Remove hardcoded run_id from protocol (currently hardcoded to "test_run")
 - [x] Fix acquisition progress
 - [x] Optional certs directory for pip install
+- [x] Configurable occupancy

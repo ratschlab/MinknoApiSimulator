@@ -20,6 +20,7 @@ class Params:
     run_id: str = 'test_run'
     output_path: str = "/tmp/MinknoApiSimulator/out"
     wait_seconds: int = 10
+    occupancy: float = 1.0
 
 params = None
 
