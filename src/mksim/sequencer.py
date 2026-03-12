@@ -295,7 +295,7 @@ class Sequencer:
         n_samples = 0
         data_responses = {}
         for i in range(self.n_channels):
-            if random.random() > config.params.occupancy:
+            if random.random() < config.params.occupancy:
                 response = self.pores[i].get_signal_chunk()
                 if response:
                     data_responses[i+1] = response    # again, i+1 because channels are 1-indexed
