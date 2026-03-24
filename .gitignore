@@ -1,3 +1,6 @@
 /certs/*.key
 /certs/*.pem
 .idea
+**__pycache__**
+**.egg-info**
+build

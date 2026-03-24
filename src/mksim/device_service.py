@@ -9,13 +9,12 @@ class DeviceService(device_pb2_grpc.DeviceServiceServicer):
 
     def get_calibration(self, request, context):
         response = device_pb2.GetCalibrationResponse(
-            digitisation = config.params.digitisation,
+            digitisation = config.get_digitisation(config.params.profile),
             has_calibration = True,
         )
-        response.offsets.extend([config.params.offset for _ in range(512)])
-        response.pa_ranges.extend([config.params.pa_range for _ in range(512)])
-
+        response.offsets.extend([ config.get_offset_mean(config.params.profile) for _ in range(512)])
+        response.pa_ranges.extend([config.get_range(config.params.profile) for _ in range(512)])
         return response
 
     def get_sample_rate(self, request, context):
-        return device_pb2.GetSampleRateResponse(sample_rate = config.params.sample_rate)
+        return device_pb2.GetSampleRateResponse(sample_rate = config.get_sample_rate(config.params.profile))

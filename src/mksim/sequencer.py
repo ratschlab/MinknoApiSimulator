@@ -99,7 +99,7 @@ class Sequence:
         """
         self.id = id
         self.signal = signal
-        self.CHUNK_SIZE = int(config.params.sample_rate * config.params.chunk_time)
+        self.CHUNK_SIZE = int(config.get_sample_rate(config.params.profile) * config.params.chunk_time)
         self.window_start = 0
         self.window_end = min(len(self.signal)-self.window_start, self.CHUNK_SIZE)
 
@@ -278,7 +278,7 @@ class Sequencer:
                     Log.status(self.get_status())
                     self.total_sleep_time = 0
                 self.response_queue.put(
-                    (action_responses, data_response, self.samples_since_start, self.samples_since_start / config.params.sample_rate)
+                    (action_responses, data_response, self.samples_since_start, self.samples_since_start / config.get_sample_rate(config.params.profile))
                 )
                 self.samples_since_start += n_samples
         print()
