@@ -10,7 +10,7 @@ class Log:
 
     @staticmethod
     def status(*args, **kwargs):
-        msg = ("\r[{}][STATUS]".format(strftime("%H:%M:%S", localtime())),) + args + ("",)
+        msg = ("\r[{}][TRACE]".format(strftime("%H:%M:%S", localtime())),) + args + ("",)
         print(*msg, file=sys.stderr, end='', **kwargs)
 
     @staticmethod
