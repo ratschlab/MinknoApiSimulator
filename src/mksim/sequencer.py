@@ -102,13 +102,15 @@ class Sequence:
         self.CHUNK_SIZE = int(config.get_sample_rate(config.params.profile) * config.params.chunk_time)
         self.window_start = 0
         self.window_end = min(len(self.signal)-self.window_start, self.CHUNK_SIZE)
+        self.current_chunk = 1
+        self.max_chunks = config.params.max_chunks if config.params.max_chunks > 0 else (1<<10)
 
     def has_more(self):
         """
         Checks if the sequence has more signal values
         :return: bool
         """
-        return self.window_start < self.window_end
+        return (self.window_start < self.window_end) and (self.current_chunk < self.max_chunks)
 
     def advance(self):
         """
@@ -117,6 +119,7 @@ class Sequence:
         """
         self.window_start = self.window_end
         self.window_end = min(len(self.signal) - self.window_start, self.CHUNK_SIZE)
+        self.current_chunk += 1
 
     def get_signal(self):
         """
