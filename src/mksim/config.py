@@ -95,7 +95,7 @@ class Params:
     output_path: str = "/tmp/MinknoApiSimulator/out"
     wait_seconds: int = 10
     occupancy: float = 1.0
-    max_chunks: int = 0
+    benchmark_chunks: int = 0
 
 params = None
 
