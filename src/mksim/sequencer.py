@@ -5,7 +5,7 @@ from time import sleep
 import random
 
 from minknow_api import data_pb2, acquisition_pb2
-from read5 import read
+import pyslow5
 from pathlib import Path
 
 from .test_utils import *
@@ -13,9 +13,10 @@ from . import config
 
 
 class Reader:
-    VALID_EXTENSIONS = ('.fast5', '.pod5', '.slow5', '.blow5')
+    VALID_EXTENSIONS = ('.slow5', '.blow5')
 
     def __init__(self):
+        self.r5 = None
         Log.info("Creating reader on", config.params.input)
 
         if not isinstance(config.params.input, list):
@@ -81,17 +82,19 @@ class Reader:
         raise ValueError(f'Input path {path} is not a file or directory.')
 
     def __open_next_file(self):
+        if hasattr(self, 'r5') and self.r5 is not None:
+            self.r5.close()
         if self.signal_files:
             filename = self.signal_files.pop(0)
-            self.r5 = read(filename)
+            self.r5 = pyslow5.Open(filename, 'r')
         else:
             self._done.set()
 
     def __next__(self):
         while not self.done:
             try:
-                rid = next(self.r5)
-                return Sequence(rid, self.r5.getSignal(rid))
+                read = next(self.r5.seq_reads(aux='all'))
+                return Sequence(read['read_id'], read['signal'])
             except StopIteration:
                 self.__open_next_file()
                 continue
