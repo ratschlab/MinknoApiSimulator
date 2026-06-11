@@ -38,7 +38,6 @@ class Reader:
             except ValueError as e:
                 Log.warn(f"Error processing path '{path_str}', skipping: {e}")
 
-        # Final check after the loop
         if not found_files_set:
             Log.error("Failed to initialize reader: No valid signal files found in any provided paths.")
             self.signal_files = []
@@ -110,6 +109,9 @@ class Sequence:
 
         :param id:     read / sequence identifier
         :param signal: raw signal as a numpy array
+
+        Note: zero-length signals (len(signal) == 0) are handled gracefully —
+        has_more() returns False immediately and no chunks are delivered.
         """
         self.id = id
         self.signal = signal
@@ -208,18 +210,36 @@ class Pore:
     def update(self):
         """
         Called once per iteration after get_signal_chunk().
-        Advances the current sequence window, or loads the next sequence
-        when the current one has been fully delivered (or ejected).
+
+        Always advances the current sequence window first.  If the sequence is
+        now exhausted (or was ejected), conditionally loads the next sequence
+        gated by the occupancy probability.  This separates two concerns that
+        were previously conflated:
+
+          - advance()        : move the delivery window forward (always correct
+                               to do after a chunk has been delivered)
+          - _load_next_seq() : admit a new molecule to the pore (gated by
+                               occupancy, only when the current read is done)
+
+        Previously, has_more() was evaluated before advance(), so the window
+        still pointed at the just-delivered chunk.  The check accidentally
+        worked because a pore with one chunk remaining would pass the else
+        branch and advance, then fail has_more() on the next iteration.
+        Making the sequencing explicit removes that fragility.
         """
         if self.file_consumed:
             return
 
-        if self.sequence and self.sequence.has_more():
+        if self.sequence is not None:
             self.sequence.advance()
-        else:
-            # Current sequence is exhausted (ran out of signal or was ejected
-            # and sequence set to None by __eject).
-            self._load_next_sequence()
+
+        # After advancing, check whether the read is fully delivered (or was
+        # ejected by setting sequence to None).  If so, admit the next read
+        # subject to the occupancy gate.
+        read_finished = self.sequence is None or not self.sequence.has_more()
+        if read_finished:
+            if random.random() < config.params.occupancy:
+                self._load_next_sequence()
 
     def get_signal_chunk(self):
         """
@@ -345,6 +365,8 @@ class Sequencer:
             data_response, n_samples = self.__update_pores()
 
             self.samples_since_start += n_samples
+            self.n_iters += 1                          # FIX: increment on every iteration,
+                                                       # including the final one
             sample_rate = config.get_sample_rate(config.params.profile)
 
             if self.reader.done:
@@ -365,7 +387,6 @@ class Sequencer:
                 if sleep_time > 0:
                     time.sleep(sleep_time)
                 self.last_sampled = time.monotonic()
-                self.n_iters += 1
 
                 if self.n_iters % self.log_interval == 0:
                     Log.status(self.get_status())
@@ -380,14 +401,20 @@ class Sequencer:
 
         print()
         Log.info('ACQUISITION_COMPLETED')
-        # Give clients a few seconds to drain the response queue and disconnect.
-        sleep(5)
+        # Wait for the client to drain and disconnect, but return early if
+        # stop_event is set so we don't block the thread unnecessarily.
+        # FIX: was sleep(5), which always blocked for the full 5 seconds.
+        config.stop_event.wait(timeout=5)
         config.stop_event.set()
 
     def __update_pores(self):
         """
-        For each channel: optionally emit a signal chunk (gated by occupancy),
-        then advance the pore state.
+        For each channel: emit a signal chunk if the pore is actively
+        sequencing, then advance pore state.
+
+        The occupancy gate (random.random() < occupancy) is now handled inside
+        Pore.update() when a read finishes, keeping this method free of
+        occupancy logic.
         """
         n_samples = 0
         data_responses = {}
@@ -401,13 +428,7 @@ class Sequencer:
                 data_responses[i + 1] = response   # channels are 1-indexed
                 n_samples += response.chunk_length
 
-            # Advance the pore.  If the pore is now idle (sequence exhausted
-            # or ejected), only admit a new read with probability = occupancy.
-            if pore.sequence is None or not pore.sequence.has_more():
-                if random.random() < config.params.occupancy:
-                    pore.update()
-            else:
-                pore.update()
+            pore.update()
 
         return data_responses, n_samples
 
@@ -452,10 +473,10 @@ class Sequencer:
             "#Iters: {}, Read: {}, Ejected: {}, Passed: {}, Missed: {}, "
             "Avg. wait: {:.3f}s".format(
                 self.n_iters,
-                sum(p.n_reads    for p in self.pores),
-                sum(p.n_ejected  for p in self.pores),
+                sum(p.n_reads     for p in self.pores),
+                sum(p.n_ejected   for p in self.pores),
                 sum(p.n_proceeded for p in self.pores),
-                sum(p.n_missed   for p in self.pores),
+                sum(p.n_missed    for p in self.pores),
                 avg_wait,
             )
         )
